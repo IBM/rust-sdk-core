@@ -4,9 +4,9 @@
 
 The first abstraction is about the Identity Manager: https://cloud.ibm.com/apidocs/iam-identity-token-api.json
 
-Simple implementation of Authenticate with Token and API key:
+Single implementation of Authenticate with Token and API key:
 
-`
+```rust
 use crate::assistant::v2::AssistantClient;
 use crate::authenticators::token_api::{AuthenticatorApiClient, TokenApiKeyRequest};
 
@@ -19,4 +19,5 @@ async fn main() {
     let token = auth.authenticate(req).await;
     println!("{:?}",token);
 
-}`
+}
+```
