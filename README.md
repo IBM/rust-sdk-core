@@ -1,4 +1,5 @@
-# IBM Cloud Core SDK
+# IBM Cloud Core SDK 
+[![Rust](https://github.com/rogeriob2br/ibmcloud-core/actions/workflows/rust.yml/badge.svg)](https://github.com/rogeriob2br/ibmcloud-core/actions/workflows/rust.yml)
 
 #### This crate is an abstraction from de api referenced in docs.
 
