@@ -5,7 +5,9 @@ authors = ["rogerio.ferreira@ibm.com <Rogerio Ferreira>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rogeriob2br/ibmcloud-core"
-
+exclude = [
+    ".github",
+]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -13,3 +15,5 @@ reqwest = { version = "0.11.3", features = ["json"] }
 serde_json = "1.0.64"
 serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0.40"
+
+
