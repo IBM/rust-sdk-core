@@ -5,6 +5,7 @@ authors = ["rogerio.ferreira@ibm.com <Rogerio Ferreira>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rogeriob2br/ibmcloud-core"
+description = "This crate for IBM Cloud is an abstraction from de api referenced in docs. "
 exclude = [
     ".github",
 ]
