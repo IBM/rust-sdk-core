@@ -1,4 +1,4 @@
-mod authenticators;
+pub mod authenticators;
 
 
 #[cfg(test)]
