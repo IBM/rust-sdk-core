@@ -6,7 +6,7 @@ const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct AuthenticatorApiClient {
-    url: String,
+    pub(crate) url: String,
 }
 
 impl AuthenticatorApiClient {
@@ -42,10 +42,10 @@ async fn get_token(req: TokenApiKeyRequest, url: String) -> Result<ResponseType>
 pub struct TokenApiKeyRequest {
     //Grant type for this API call. You must set the
     // grant type to urn:ibm:params:oauth:grant-type:apikey.
-    grant_type: String,
+    pub(crate) grant_type: String,
 
     //The value of the api key.
-    apikey: String,
+    pub(crate) apikey: String,
 }
 
 impl TokenApiKeyRequest {
