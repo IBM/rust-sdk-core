@@ -1,31 +1,60 @@
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use anyhow::Result;
 use serde::Deserialize;
+use chrono::{DateTime, FixedOffset, Local, Utc, NaiveDate, NaiveDateTime};
 
 const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
 
-#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct AuthenticatorApiClient {
     pub(crate) url: String,
+    pub(crate) token: TokenResponse,
+    pub(crate) options: Options
 }
 
 impl AuthenticatorApiClient {
-    pub fn new(url: String) -> AuthenticatorApiClient {
-        AuthenticatorApiClient { url }
-    }
-    pub async fn authenticate(&self, req: TokenApiKeyRequest) -> Result<ResponseType> {
-
-        let response = get_token(req, String::from(&self.url)).await?;
-        match response.clone(){
-            TokenResponse=>{
-                Ok(TokenResponse)
-            }
-
+    pub fn new(url: String, apikey: String) -> AuthenticatorApiClient {
+        AuthenticatorApiClient { url, token: TokenResponse {
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: 0
+        },
+            options: Options::new(apikey)
         }
     }
+    fn set_token(&mut self, token: TokenResponse){
+        self.token = token
+    }
+
+    pub fn get_token(&mut self)->TokenResponse{
+        if self.token.validate_token(){
+            self.token.clone()
+        }else{
+            self.authenticate();
+            self.token.clone()
+        }
+        
+    }
+
+    pub async fn authenticate(&mut self) -> Result<()> {
+        let response = get_token(self.options.clone(), String::from(&self.url.clone())).await?;
+
+        match response.clone(){
+            ResponseType::Ok(TokenResponse)=>{
+                self.set_token(TokenResponse);
+                Ok(())
+            }
+            _=>{Ok(()) }
+        }
+    }
+    
+    
 }
 
-async fn get_token(req: TokenApiKeyRequest, url: String) -> Result<ResponseType> {
+async fn get_token(req: Options, url: String) -> Result<ResponseType> {
     let params = urlencoded_parameter(req);
     let response: ResponseType = reqwest::Client::new()
         .post(url)
@@ -39,7 +68,7 @@ async fn get_token(req: TokenApiKeyRequest, url: String) -> Result<ResponseType>
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
-pub struct TokenApiKeyRequest {
+pub struct Options {
     //Grant type for this API call. You must set the
     // grant type to urn:ibm:params:oauth:grant-type:apikey.
     pub(crate) grant_type: String,
@@ -48,9 +77,9 @@ pub struct TokenApiKeyRequest {
     pub(crate) apikey: String,
 }
 
-impl TokenApiKeyRequest {
-    pub fn new(apikey: String) -> TokenApiKeyRequest {
-        TokenApiKeyRequest {
+impl Options {
+    pub fn new(apikey: String) -> Options {
+        Options {
             grant_type: GRANT_TYPE.to_string(),
             apikey,
         }
@@ -100,6 +129,19 @@ pub struct TokenResponse {
 impl TokenResponse{
     pub fn get_access_token(&self)->String{
         self.access_token.clone()
+    }
+    pub fn get_expiration(&self)->i32{
+        self.expiration.clone()
+    }
+    fn validate_token(&self)-> bool{
+        let mut local_time = Local::now().timestamp();
+        let near_ex = self.get_expiration() as i64 - 5;
+        if local_time >= near_ex{
+            false
+        }
+        else{
+            true
+        }
     }
 }
 
@@ -208,7 +250,7 @@ fn construct_headers() -> HeaderMap {
 }
 
 
-fn urlencoded_parameter(token: TokenApiKeyRequest) -> [(String, String); 2] {
+fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
     let params: [(String, String); 2] = [
         ("grant_type".to_string(), token.grant_type),
         ("apikey".to_string(), token.apikey),
@@ -216,28 +258,28 @@ fn urlencoded_parameter(token: TokenApiKeyRequest) -> [(String, String); 2] {
     params
 }
 
-
-#[cfg(test)]
-mod TokenApiTests{
-    const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
-    const api_key:  &str= "api_key";
-    const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
-
-    use crate::authenticators::token_api::{AuthenticatorApiClient, TokenApiKeyRequest};
-
-    #[test]
-    fn new_authenticator_client_success(){
-        let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
-
-        assert_eq!(auth, AuthenticatorApiClient{ url: ibm_cloud_iam_url.to_string() })
-    }
-    fn new_token_api_request_success(){
-        let req = TokenApiKeyRequest::new(api_key.to_string());
-
-        assert_eq!(req, TokenApiKeyRequest{ grant_type: GRANT_TYPE.to_string(), apikey: api_key.to_string() })
-    }
-
-
-
-}
+//
+// #[cfg(test)]
+// mod TokenApiTests{
+//     const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
+//     const api_key:  &str= "api_key";
+//     const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
+//
+//     use crate::authenticators::token_api::{AuthenticatorApiClient, Options};
+//
+//     #[test]
+//     fn new_authenticator_client_success(){
+//         let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
+//
+//         assert_eq!(auth, AuthenticatorApiClient{ url: ibm_cloud_iam_url.to_string() })
+//     }
+//     fn new_token_api_request_success(){
+//         let req = Options::new(api_key.to_string());
+//
+//         assert_eq!(req, Options{ grant_type: GRANT_TYPE.to_string(), apikey: api_key.to_string() })
+//     }
+//
+//
+//
+// }
 
