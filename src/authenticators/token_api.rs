@@ -15,13 +15,13 @@ pub struct Configs{
 impl Configs{
     fn new()->Configs{
         let key = "IAM_IDENTITY_URL";
-        match env::var((key)){
+        match env::var(key){
             Ok(val) =>{
                 Configs{
                     IAM_IDENTITY_URL: val,
                 }
             }
-            Err(e) => {
+            Err(..) => {
                 Configs{
                     IAM_IDENTITY_URL: IAM_CLOUD_URL_AUTH.to_string(),
                 }
@@ -57,11 +57,11 @@ impl AuthenticatorApiClient {
         self.token = token
     }
 
-    pub fn get_token(&mut self) -> TokenResponse {
+    pub async fn get_token(&mut self) -> TokenResponse {
         if self.token.validate_token() {
             self.token.clone()
         } else {
-            self.authenticate();
+            self.authenticate().await;
             self.token.clone()
         }
     }
@@ -159,7 +159,7 @@ impl TokenResponse {
         self.expiration.clone()
     }
     fn validate_token(&self) -> bool {
-        let mut local_time = Local::now().timestamp();
+        let local_time = Local::now().timestamp();
         let near_ex = self.get_expiration() as i64 - 5;
         if local_time >= near_ex {
             false
