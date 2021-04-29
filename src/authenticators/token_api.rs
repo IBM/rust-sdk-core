@@ -1,57 +1,57 @@
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use anyhow::Result;
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, Utc};
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use serde::Deserialize;
-use chrono::{DateTime, FixedOffset, Local, Utc, NaiveDate, NaiveDateTime};
 
 const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
+const IAM_CLOUD_URL_AUTH: &str = "https://iam.cloud.ibm.com/identity/token";
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AuthenticatorApiClient {
     pub(crate) url: String,
     pub(crate) token: TokenResponse,
-    pub(crate) options: Options
+    pub(crate) options: Options,
 }
 
 impl AuthenticatorApiClient {
-    pub fn new(url: String, apikey: String) -> AuthenticatorApiClient {
-        AuthenticatorApiClient { url, token: TokenResponse {
-            access_token: "".to_string(),
-            refresh_token: None,
-            delegated_refresh_token: None,
-            token_type: "".to_string(),
-            expires_in: 0,
-            expiration: 0
-        },
-            options: Options::new(apikey)
+    pub fn new(apikey: String) -> AuthenticatorApiClient {
+        AuthenticatorApiClient {
+            url: IAM_CLOUD_URL_AUTH.to_string(),
+            token: TokenResponse {
+                access_token: "".to_string(),
+                refresh_token: None,
+                delegated_refresh_token: None,
+                token_type: "".to_string(),
+                expires_in: 0,
+                expiration: 0,
+            },
+            options: Options::new(apikey),
         }
     }
-    fn set_token(&mut self, token: TokenResponse){
+    fn set_token(&mut self, token: TokenResponse) {
         self.token = token
     }
 
-    pub fn get_token(&mut self)->TokenResponse{
-        if self.token.validate_token(){
+    pub fn get_token(&mut self) -> TokenResponse {
+        if self.token.validate_token() {
             self.token.clone()
-        }else{
+        } else {
             self.authenticate();
             self.token.clone()
         }
-        
     }
 
     pub async fn authenticate(&mut self) -> Result<()> {
         let response = get_token(self.options.clone(), String::from(&self.url.clone())).await?;
 
-        match response.clone(){
-            ResponseType::Ok(TokenResponse)=>{
+        match response.clone() {
+            ResponseType::Ok(TokenResponse) => {
                 self.set_token(TokenResponse);
                 Ok(())
             }
-            _=>{Ok(()) }
+            _ => Ok(()),
         }
     }
-    
-    
 }
 
 async fn get_token(req: Options, url: String) -> Result<ResponseType> {
@@ -61,9 +61,9 @@ async fn get_token(req: Options, url: String) -> Result<ResponseType> {
         .form(&params)
         .headers(construct_headers())
         .send()
-        .await?.
-        json().
-        await?;
+        .await?
+        .json()
+        .await?;
     Ok(response)
 }
 
@@ -88,9 +88,9 @@ impl Options {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
-pub enum ResponseType{
+pub enum ResponseType {
     Ok(TokenResponse),
-    Err(OidcExceptionResponse)
+    Err(OidcExceptionResponse),
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -126,20 +126,19 @@ pub struct TokenResponse {
     expiration: i32,
 }
 
-impl TokenResponse{
-    pub fn get_access_token(&self)->String{
+impl TokenResponse {
+    pub fn get_access_token(&self) -> String {
         self.access_token.clone()
     }
-    pub fn get_expiration(&self)->i32{
+    pub fn get_expiration(&self) -> i32 {
         self.expiration.clone()
     }
-    fn validate_token(&self)-> bool{
+    fn validate_token(&self) -> bool {
         let mut local_time = Local::now().timestamp();
         let near_ex = self.get_expiration() as i64 - 5;
-        if local_time >= near_ex{
+        if local_time >= near_ex {
             false
-        }
-        else{
+        } else {
             true
         }
     }
@@ -214,7 +213,6 @@ pub struct OidcExceptionResponse {
     // Response body parameters in case of oidc error situations.
 
     // Context fill with key properties for problem determination.
-
     context: ExceptionResponseContext,
 
     //Error message code of the REST Exception.
@@ -226,7 +224,6 @@ pub struct OidcExceptionResponse {
     // is happening if no message catalog is available for the provided input locale.
     #[serde(rename = "errorMessage")]
     error_message: String,
-
     //Error details of the REST Exception.
 
     //#[serde(rename = "errorDetails")]
@@ -248,7 +245,6 @@ fn construct_headers() -> HeaderMap {
     );
     headers
 }
-
 
 fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
     let params: [(String, String); 2] = [
@@ -282,4 +278,3 @@ fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
 //
 //
 // }
-

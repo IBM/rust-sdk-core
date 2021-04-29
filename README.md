@@ -17,24 +17,22 @@ ibmcloud-core = "0.1.2"
 Main.rs
 ```rust
 //src/main.rs
-use ibmcloud_core::authenticators::token_api::{AuthenticatorApiClient, ResponseType, TokenResponse};
+use ibmcloud_core::authenticators::token_api::{
+    AuthenticatorApiClient, ResponseType, TokenResponse,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // You Atuhenticator Client
     // Need change your api-key
-    let mut auth = AuthenticatorApiClient::new(
-        "https://iam.cloud.ibm.com/identity/token"
-            .to_string(),
-        "<YOUR-API-key>"
-            .to_string()
-    );
+    let mut auth = AuthenticatorApiClient::new("<YOUR-API-key>".to_string());
+
     // This turn your client authenticated
     auth.authenticate().await?;
     println!("{:?}", auth.clone());
     
     // If you need to get token, this is the best choice. 
-    // This feature manages the lifetime of your token.
+    // This feature manages the life cycle of your token.
     let token = auth.get_token();
     Ok(())
 }
