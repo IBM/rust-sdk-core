@@ -1,10 +1,34 @@
 use anyhow::Result;
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, Utc};
+use chrono::{Local};
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use serde::Deserialize;
+use std::env;
 
 const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
 const IAM_CLOUD_URL_AUTH: &str = "https://iam.cloud.ibm.com/identity/token";
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Configs{
+    IAM_IDENTITY_URL: String,
+}
+
+impl Configs{
+    fn new()->Configs{
+        let key = "IAM_IDENTITY_URL";
+        match env::var((key)){
+            Ok(val) =>{
+                Configs{
+                    IAM_IDENTITY_URL: val,
+                }
+            }
+            Err(e) => {
+                Configs{
+                    IAM_IDENTITY_URL: IAM_CLOUD_URL_AUTH.to_string(),
+                }
+            }
+        }
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AuthenticatorApiClient {
@@ -15,8 +39,9 @@ pub struct AuthenticatorApiClient {
 
 impl AuthenticatorApiClient {
     pub fn new(apikey: String) -> AuthenticatorApiClient {
+        let config = Configs::new();
         AuthenticatorApiClient {
-            url: IAM_CLOUD_URL_AUTH.to_string(),
+            url: config.IAM_IDENTITY_URL,
             token: TokenResponse {
                 access_token: "".to_string(),
                 refresh_token: None,
