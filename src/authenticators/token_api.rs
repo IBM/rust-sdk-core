@@ -279,27 +279,60 @@ fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
     params
 }
 
+
+#[cfg(test)]
+mod TokenApiTests{
+    use crate::authenticators::token_api::{Options, urlencoded_parameter, construct_headers, TokenResponse};
+    use reqwest::header::{HeaderMap, USER_AGENT, CONTENT_TYPE};
+
+    const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
+    const api_key:  &str= "apikey";
+    const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
+
+
+    #[test]
+    fn set_urlencoded_parameter(){
+        let token: Options = Options{
+            grant_type: GRANT_TYPE.to_string(),
+            apikey: api_key.to_string()
+        };
+        let param = urlencoded_parameter(token);
+
+        assert_eq!(param[0].0,"grant_type".to_string());
+        assert_eq!(param[0].1, GRANT_TYPE.to_string());
+        assert_eq!(param[1].0, "apikey".to_string());
+        assert_eq!(param[1].0, api_key.to_string());
+    }
+
+    #[test]
+    fn set_headers_map(){
+        let headers = construct_headers();
+
+        assert_eq!(headers.get(USER_AGENT).unwrap(),&"reqwest");
+        assert_eq!(headers.get(CONTENT_TYPE).unwrap(),&"application/x-www-form-urlencoded")
+    }
+
+    #[test]
+    fn tokenresponse_get_access_token(){
+        let tokenresponse = TokenResponse{
+            access_token: "Token".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: 0
+        };
+        assert_eq!(tokenresponse.get_access_token(), "Token".to_string())
+    }
+}
+// fn new_authenticator_client_success(){
+//     let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
 //
-// #[cfg(test)]
-// mod TokenApiTests{
-//     const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
-//     const api_key:  &str= "api_key";
-//     const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
-//
-//     use crate::authenticators::token_api::{AuthenticatorApiClient, Options};
-//
-//     #[test]
-//     fn new_authenticator_client_success(){
-//         let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
-//
-//         assert_eq!(auth, AuthenticatorApiClient{ url: ibm_cloud_iam_url.to_string() })
-//     }
-//     fn new_token_api_request_success(){
-//         let req = Options::new(api_key.to_string());
-//
-//         assert_eq!(req, Options{ grant_type: GRANT_TYPE.to_string(), apikey: api_key.to_string() })
-//     }
-//
-//
-//
+//     assert_eq!(auth, AuthenticatorApiClient{ url: ibm_cloud_iam_url.to_string() })
 // }
+// fn new_token_api_request_success(){
+//     let req = Options::new(api_key.to_string());
+//
+//     assert_eq!(req, Options{ grant_type: GRANT_TYPE.to_string(), apikey: api_key.to_string() })
+// }
+
