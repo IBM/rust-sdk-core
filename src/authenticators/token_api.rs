@@ -284,6 +284,7 @@ fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
 mod TokenApiTests{
     use crate::authenticators::token_api::{Options, urlencoded_parameter, construct_headers, TokenResponse};
     use reqwest::header::{HeaderMap, USER_AGENT, CONTENT_TYPE};
+    use chrono::Local;
 
     const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
     const api_key:  &str= "apikey";
@@ -324,6 +325,46 @@ mod TokenApiTests{
         };
         assert_eq!(tokenresponse.get_access_token(), "Token".to_string())
     }
+
+    #[test]
+    fn tokenresponse_get_expiration(){
+        let tokenresponse = TokenResponse{
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: 169900991
+        };
+        assert_eq!(tokenresponse.get_expiration(),169900991)
+
+    }
+    #[test]
+    fn tokenresponse_get_validate_token(){
+        let invalid_token = TokenResponse{
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: (Local::now().timestamp() - 3000) as i32
+        };
+
+
+        let valid_token = TokenResponse{
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: (Local::now().timestamp() + 3000) as i32
+        };
+
+        assert_eq!(invalid_token.validate_token(), false);
+        assert_eq!(valid_token.validate_token(), true)
+
+    }
+
 }
 // fn new_authenticator_client_success(){
 //     let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
