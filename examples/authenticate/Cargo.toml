@@ -1,0 +1,11 @@
+[package]
+name = "authenticate"
+version = "0.1.0"
+authors = ["rogerio.ferreira@ibm.com <Rogerio Ferreira>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+ibmcloud-core = "0.1.2"
