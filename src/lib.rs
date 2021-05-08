@@ -1,6 +1,5 @@
 pub mod authenticators;
 
-
 // #[cfg(test)]
 // mod TokenApiTests{
 //     const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";

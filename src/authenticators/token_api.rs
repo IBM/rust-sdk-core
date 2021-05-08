@@ -1,69 +1,90 @@
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use anyhow::Result;
+use chrono::Local;
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use serde::Deserialize;
-use chrono::{DateTime, FixedOffset, Local, Utc, NaiveDate, NaiveDateTime};
+use std::env;
 
 const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
+const IAM_CLOUD_URL_AUTH: &str = "https://iam.cloud.ibm.com/identity/token";
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Configs {
+    IAM_IDENTITY_URL: String,
+}
+
+impl Configs {
+    fn new() -> Configs {
+        let key = "IAM_IDENTITY_URL";
+        match env::var(key) {
+            Ok(val) => Configs {
+                IAM_IDENTITY_URL: val,
+            },
+            Err(..) => Configs {
+                IAM_IDENTITY_URL: IAM_CLOUD_URL_AUTH.to_string(),
+            },
+        }
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AuthenticatorApiClient {
     pub(crate) url: String,
     pub(crate) token: TokenResponse,
-    pub(crate) options: Options
+    pub(crate) options: Options,
 }
 
 impl AuthenticatorApiClient {
-    pub fn new(url: String, apikey: String) -> AuthenticatorApiClient {
-        AuthenticatorApiClient { url, token: TokenResponse {
-            access_token: "".to_string(),
-            refresh_token: None,
-            delegated_refresh_token: None,
-            token_type: "".to_string(),
-            expires_in: 0,
-            expiration: 0
-        },
-            options: Options::new(apikey)
+    pub fn new(apikey: String) -> AuthenticatorApiClient {
+        let config = Configs::new();
+        AuthenticatorApiClient {
+            url: config.IAM_IDENTITY_URL,
+            token: TokenResponse {
+                access_token: "".to_string(),
+                refresh_token: None,
+                delegated_refresh_token: None,
+                token_type: "".to_string(),
+                expires_in: 0,
+                expiration: 0,
+            },
+            options: Options::new(apikey),
         }
     }
-    fn set_token(&mut self, token: TokenResponse){
+    fn set_token(&mut self, token: TokenResponse) {
         self.token = token
     }
 
-    pub fn get_token(&mut self)->TokenResponse{
-        if self.token.validate_token(){
+    pub async fn get_token(&mut self) -> TokenResponse {
+        if self.token.validate_token() {
             self.token.clone()
-        }else{
-            self.authenticate();
+        } else {
+            self.authenticate().await;
             self.token.clone()
         }
-        
     }
 
     pub async fn authenticate(&mut self) -> Result<()> {
-        let response = get_token(self.options.clone(), String::from(&self.url.clone())).await?;
+        let response = request_token(self.options.clone(), String::from(&self.url.clone())).await?;
 
-        match response.clone(){
-            ResponseType::Ok(TokenResponse)=>{
+        match response.clone() {
+            ResponseType::Ok(TokenResponse) => {
                 self.set_token(TokenResponse);
                 Ok(())
             }
-            _=>{Ok(()) }
+            _ => Ok(()),
         }
     }
-    
-    
 }
 
-async fn get_token(req: Options, url: String) -> Result<ResponseType> {
+async fn request_token(req: Options, url: String) -> Result<ResponseType> {
     let params = urlencoded_parameter(req);
     let response: ResponseType = reqwest::Client::new()
         .post(url)
         .form(&params)
         .headers(construct_headers())
         .send()
-        .await?.
-        json().
-        await?;
+        .await?
+        .json()
+        .await?;
     Ok(response)
 }
 
@@ -88,9 +109,9 @@ impl Options {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
-pub enum ResponseType{
+pub enum ResponseType {
     Ok(TokenResponse),
-    Err(OidcExceptionResponse)
+    Err(OidcExceptionResponse),
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -126,20 +147,19 @@ pub struct TokenResponse {
     expiration: i32,
 }
 
-impl TokenResponse{
-    pub fn get_access_token(&self)->String{
+impl TokenResponse {
+    pub fn get_access_token(&self) -> String {
         self.access_token.clone()
     }
-    pub fn get_expiration(&self)->i32{
+    pub fn get_expiration(&self) -> i32 {
         self.expiration.clone()
     }
-    fn validate_token(&self)-> bool{
-        let mut local_time = Local::now().timestamp();
+    fn validate_token(&self) -> bool {
+        let local_time = Local::now().timestamp();
         let near_ex = self.get_expiration() as i64 - 5;
-        if local_time >= near_ex{
+        if local_time >= near_ex {
             false
-        }
-        else{
+        } else {
             true
         }
     }
@@ -214,7 +234,6 @@ pub struct OidcExceptionResponse {
     // Response body parameters in case of oidc error situations.
 
     // Context fill with key properties for problem determination.
-
     context: ExceptionResponseContext,
 
     //Error message code of the REST Exception.
@@ -226,7 +245,6 @@ pub struct OidcExceptionResponse {
     // is happening if no message catalog is available for the provided input locale.
     #[serde(rename = "errorMessage")]
     error_message: String,
-
     //Error details of the REST Exception.
 
     //#[serde(rename = "errorDetails")]
@@ -249,7 +267,6 @@ fn construct_headers() -> HeaderMap {
     headers
 }
 
-
 fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
     let params: [(String, String); 2] = [
         ("grant_type".to_string(), token.grant_type),
@@ -258,28 +275,91 @@ fn urlencoded_parameter(token: Options) -> [(String, String); 2] {
     params
 }
 
-//
-// #[cfg(test)]
-// mod TokenApiTests{
-//     const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
-//     const api_key:  &str= "api_key";
-//     const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
-//
-//     use crate::authenticators::token_api::{AuthenticatorApiClient, Options};
-//
-//     #[test]
-//     fn new_authenticator_client_success(){
-//         let auth = AuthenticatorApiClient::new(ibm_cloud_iam_url.to_string());
-//
-//         assert_eq!(auth, AuthenticatorApiClient{ url: ibm_cloud_iam_url.to_string() })
-//     }
-//     fn new_token_api_request_success(){
-//         let req = Options::new(api_key.to_string());
-//
-//         assert_eq!(req, Options{ grant_type: GRANT_TYPE.to_string(), apikey: api_key.to_string() })
-//     }
-//
-//
-//
-// }
+#[cfg(test)]
+mod TokenApiTests {
+    use crate::authenticators::token_api::{
+        construct_headers, request_token, urlencoded_parameter, Options, ResponseType,
+        TokenResponse,
+    };
+    use chrono::Local;
+    use mockito::mock;
+    use reqwest::header::{HeaderMap, CONTENT_TYPE, USER_AGENT};
 
+    const ibm_cloud_iam_url: &str = "ibm_cloud_iam_url";
+    const api_key: &str = "apikey";
+    const GRANT_TYPE: &str = "urn:ibm:params:oauth:grant-type:apikey";
+
+    #[test]
+    fn set_urlencoded_parameter() {
+        let token: Options = Options {
+            grant_type: GRANT_TYPE.to_string(),
+            apikey: api_key.to_string(),
+        };
+        let param = urlencoded_parameter(token);
+
+        assert_eq!(param[0].0, "grant_type".to_string());
+        assert_eq!(param[0].1, GRANT_TYPE.to_string());
+        assert_eq!(param[1].0, "apikey".to_string());
+        assert_eq!(param[1].0, api_key.to_string());
+    }
+
+    #[test]
+    fn set_headers_map() {
+        let headers = construct_headers();
+
+        assert_eq!(headers.get(USER_AGENT).unwrap(), &"reqwest");
+        assert_eq!(
+            headers.get(CONTENT_TYPE).unwrap(),
+            &"application/x-www-form-urlencoded"
+        )
+    }
+
+    #[test]
+    fn tokenresponse_get_access_token() {
+        let tokenresponse = TokenResponse {
+            access_token: "Token".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: 0,
+        };
+        assert_eq!(tokenresponse.get_access_token(), "Token".to_string())
+    }
+
+    #[test]
+    fn tokenresponse_get_expiration() {
+        let tokenresponse = TokenResponse {
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: 169900991,
+        };
+        assert_eq!(tokenresponse.get_expiration(), 169900991)
+    }
+    #[test]
+    fn tokenresponse_get_validate_token() {
+        let invalid_token = TokenResponse {
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: (Local::now().timestamp() - 3000) as i32,
+        };
+
+        let valid_token = TokenResponse {
+            access_token: "".to_string(),
+            refresh_token: None,
+            delegated_refresh_token: None,
+            token_type: "".to_string(),
+            expires_in: 0,
+            expiration: (Local::now().timestamp() + 3000) as i32,
+        };
+
+        assert_eq!(invalid_token.validate_token(), false);
+        assert_eq!(valid_token.validate_token(), true)
+    }
+}
