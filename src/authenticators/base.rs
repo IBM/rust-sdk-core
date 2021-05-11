@@ -149,3 +149,24 @@ pub struct OidcExceptionResponse {
     //#[serde(skip_deserializing)]
     //requirements: MFARequirementsResponse,
 }
+
+const IAM_CLOUD_URL_AUTH: &str = "https://iam.cloud.ibm.com/identity/token";
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Configs {
+    pub(crate) IAM_IDENTITY_URL: String,
+}
+
+impl Configs {
+    pub(crate) fn new() -> Configs {
+        let key = "IAM_IDENTITY_URL";
+        match env::var(key) {
+            Ok(val) => Configs {
+                IAM_IDENTITY_URL: val,
+            },
+            Err(..) => Configs {
+                IAM_IDENTITY_URL: IAM_CLOUD_URL_AUTH.to_string(),
+            },
+        }
+    }
+}
