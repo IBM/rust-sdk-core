@@ -1,6 +1,7 @@
 
 use serde::Deserialize;
 use chrono::Local;
+use std::env;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -47,7 +48,7 @@ impl TokenResponse {
         self.access_token.clone()
     }
     pub fn get_expiration(&self) -> i32 {
-        self.expiration.clone()
+        self.expiration
     }
     pub(crate) fn validate_token(&self) -> bool {
         let local_time = Local::now().timestamp();
@@ -148,4 +149,25 @@ pub struct OidcExceptionResponse {
     //Response properties for MFA requirements.
     //#[serde(skip_deserializing)]
     //requirements: MFARequirementsResponse,
+}
+
+const IAM_CLOUD_URL_AUTH: &str = "https://iam.cloud.ibm.com/identity/token";
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Configs {
+    pub(crate) IAM_IDENTITY_URL: String,
+}
+
+impl Configs {
+    pub(crate) fn new() -> Configs {
+        let key = "IAM_IDENTITY_URL";
+        match env::var(key) {
+            Ok(val) => Configs {
+                IAM_IDENTITY_URL: val,
+            },
+            Err(..) => Configs {
+                IAM_IDENTITY_URL: IAM_CLOUD_URL_AUTH.to_string(),
+            },
+        }
+    }
 }

@@ -1,0 +1,27 @@
+[package]
+name = "ibmcloud-core"
+version = "0.0.1"
+authors = ["rogerio.ferreira@ibm.com <Rogerio Ferreira>", "petrus.batalha1@ibm.com <Petrus Batalha>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/IBM/ibmcloud-core"
+description = "This crate for IBM Cloud is an abstraction from de api referenced in docs. "
+exclude = [
+    ".github",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_json = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+serde_derive = "^1.0"
+anyhow = "1.0.40"
+chrono = "0.4.19"
+mockito = "0.30.0"
+url = "^2.2"
+
+[dependencies.reqwest]
+version = "^0.11"
+default-features = false
+features = ["json", "multipart"]

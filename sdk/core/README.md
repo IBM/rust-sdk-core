@@ -1,6 +1,8 @@
 # IBM Cloud Core SDK 
 [![Rust](https://github.com/rogeriob2br/ibmcloud-core/actions/workflows/rust.yml/badge.svg)](https://github.com/rogeriob2br/ibmcloud-core/actions/workflows/rust.yml)
 
+
+![img.png](img.png)
 #### This crate is an abstraction from de api referenced in docs.
 
 The first abstraction is about the Identity Manager: https://cloud.ibm.com/apidocs/iam-identity-token-api.json
