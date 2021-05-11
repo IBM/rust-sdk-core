@@ -48,7 +48,7 @@ impl TokenResponse {
         self.access_token.clone()
     }
     pub fn get_expiration(&self) -> i32 {
-        self.expiration.clone()
+        self.expiration
     }
     pub(crate) fn validate_token(&self) -> bool {
         let local_time = Local::now().timestamp();

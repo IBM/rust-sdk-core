@@ -5,8 +5,11 @@
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/examples/authenticate/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <sourceFolder url="file://$MODULE_DIR$/sdk/ibm-cloud-iam/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sdk/core/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sdk/core/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/examples/authenticate/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -1,0 +1,20 @@
+[package]
+name = "ibm-cloud-iam"
+version = "0.0.1"
+authors = ["rogerio.ferreira@ibm.com <Rogerio Ferreira>", "petrusbatalha <petrus.batalha21@gmail.com>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+exclude = [
+    ".github",
+]
+
+[dependencies]
+serde_json = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+serde_derive = "^1.0"
+url = "^2.2"
+
+[dependencies.reqwest]
+version = "^0.11"
+default-features = false
+features = ["json", "multipart"]
