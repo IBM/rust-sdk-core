@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/sdk/ibm-cloud-iam/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sdk/core/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sdk/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sdk/ibm-watson-assistant-v2/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/examples/authenticate/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

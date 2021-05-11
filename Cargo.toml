@@ -1,2 +1,2 @@
 [workspace]
-members = [ "sdk/core", "sdk/ibm-cloud-iam" ]
+members = [ "sdk/core", "sdk/ibm-cloud-iam","sdk/ibm-watson-assistant-v2"]
