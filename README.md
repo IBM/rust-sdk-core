@@ -4,4 +4,3 @@
 
 ![img.png](img.png)
 #### This is the repository of the crates that make up the SDKs for IBM Cloud services.
-
